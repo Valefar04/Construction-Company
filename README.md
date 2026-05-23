@@ -1,7 +1,5 @@
 # Construction Management Desktop App
 
-This is a Tkinter frontend for the Oracle query scripts. Put this app file in the same folder as the backend scripts.
-
 ## Run
 
 Double-click `run_construction_manager.bat`, or run:
