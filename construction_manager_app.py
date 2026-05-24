@@ -15,6 +15,15 @@ SCRIPT_DIR = APP_DIR / "scripts"
 APP_USERNAME = "ConstructionCompany"
 APP_PASSWORD = "const123"
 PAYROLL_PAYMENT_REGISTER_TITLE = "Register Employee Payment"
+LOGO_PATH = APP_DIR / "assets" / "duo_builders_logo.png"
+COLOR_BG = "#f4f6fb"
+COLOR_PANEL = "#ffffff"
+COLOR_TEXT = "#1f2440"
+COLOR_MUTED = "#6d7188"
+COLOR_PURPLE = "#65609f"
+COLOR_PURPLE_DARK = "#3f3a72"
+COLOR_CYAN = "#66d4dd"
+COLOR_PANEL_BORDER = "#d9dcef"
 
 
 @dataclass(frozen=True)
@@ -243,7 +252,7 @@ SECTIONS: dict[str, tuple[Operation, ...]] = {
 class ConstructionManagerApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Construction Management")
+        self.title("Duo Builders")
         self.geometry("1100x720")
         self.minsize(920, 600)
 
@@ -252,56 +261,100 @@ class ConstructionManagerApp(tk.Tk):
         self.current_operation = SECTIONS["Construction Sites"][0]
         self.field_vars: dict[str, tk.StringVar] = {}
         self.operation_lookup: dict[str, Operation] = {}
+        self.logo_images: list[tk.PhotoImage] = []
 
+        self._set_window_icon()
         self._configure_style()
         self._build_login()
 
     def _configure_style(self) -> None:
-        self.configure(bg="#f5f6f2")
+        self.configure(bg=COLOR_BG)
         style = ttk.Style(self)
         style.theme_use("clam")
-        style.configure("TFrame", background="#f5f6f2")
-        style.configure("Panel.TFrame", background="#ffffff", relief="solid", borderwidth=1)
-        style.configure("Sidebar.TFrame", background="#24312f")
-        style.configure("TLabel", background="#f5f6f2", foreground="#1d2524", font=("Segoe UI", 10))
-        style.configure("Panel.TLabel", background="#ffffff", foreground="#1d2524")
-        style.configure("Muted.Panel.TLabel", background="#ffffff", foreground="#66706b")
-        style.configure("Title.TLabel", background="#f5f6f2", foreground="#17201f", font=("Segoe UI Semibold", 18))
-        style.configure("Sidebar.TLabel", background="#24312f", foreground="#f6f2e8", font=("Segoe UI Semibold", 13))
-        style.configure("LoginTitle.TLabel", background="#ffffff", foreground="#17201f", font=("Segoe UI Semibold", 20))
+        style.configure("TFrame", background=COLOR_BG)
+        style.configure(
+            "Panel.TFrame",
+            background=COLOR_PANEL,
+            relief="solid",
+            borderwidth=1,
+            bordercolor=COLOR_PANEL_BORDER,
+            lightcolor=COLOR_PANEL,
+            darkcolor=COLOR_PANEL_BORDER,
+        )
+        style.configure("Sidebar.TFrame", background=COLOR_PURPLE_DARK)
+        style.configure("TLabel", background=COLOR_BG, foreground=COLOR_TEXT, font=("Segoe UI", 10))
+        style.configure("Panel.TLabel", background=COLOR_PANEL, foreground=COLOR_TEXT)
+        style.configure("Muted.Panel.TLabel", background=COLOR_PANEL, foreground=COLOR_MUTED)
+        style.configure("Title.TLabel", background=COLOR_BG, foreground=COLOR_TEXT, font=("Segoe UI Semibold", 20))
+        style.configure("Subtitle.TLabel", background=COLOR_BG, foreground=COLOR_MUTED, font=("Segoe UI", 10))
+        style.configure("Sidebar.TLabel", background=COLOR_PURPLE_DARK, foreground="#ffffff", font=("Segoe UI Semibold", 13))
+        style.configure("SidebarMuted.TLabel", background=COLOR_PURPLE_DARK, foreground="#d7d5f0", font=("Segoe UI", 9))
+        style.configure("LoginTitle.TLabel", background=COLOR_PANEL, foreground=COLOR_TEXT, font=("Segoe UI Semibold", 19))
+        style.configure("LoginSubtitle.TLabel", background=COLOR_PANEL, foreground=COLOR_MUTED, font=("Segoe UI", 10))
         style.configure("TButton", font=("Segoe UI Semibold", 10), padding=(12, 8))
-        style.configure("Accent.TButton", background="#2f6f5e", foreground="#ffffff")
-        style.map("Accent.TButton", background=[("active", "#285f51"), ("disabled", "#9bb2aa")])
+        style.configure("Accent.TButton", background=COLOR_PURPLE, foreground="#ffffff")
+        style.map(
+            "Accent.TButton",
+            background=[("active", COLOR_PURPLE_DARK), ("disabled", "#b6b4d1")],
+            foreground=[("disabled", "#f2f2fb")],
+        )
         style.configure("TEntry", padding=(8, 6))
         style.configure("TCombobox", padding=(8, 6))
+
+    def _set_window_icon(self) -> None:
+        if not LOGO_PATH.exists():
+            return
+
+        icon = tk.PhotoImage(file=str(LOGO_PATH))
+        self.logo_images.append(icon)
+        self.iconphoto(True, icon)
+
+    def _build_logo(self, parent: tk.Widget, subsample: int, background: str = "#ffffff") -> tk.Label | ttk.Label:
+        if not LOGO_PATH.exists():
+            return ttk.Label(parent, text="Duo Builders", style="LoginTitle.TLabel")
+
+        image = tk.PhotoImage(file=str(LOGO_PATH))
+        if subsample > 1:
+            image = image.subsample(subsample, subsample)
+        self.logo_images.append(image)
+        return tk.Label(parent, image=image, bg=background, bd=0, highlightthickness=0)
 
     def _build_login(self) -> None:
         self.login_user_var = tk.StringVar()
         self.login_password_var = tk.StringVar()
         self.login_status_var = tk.StringVar()
 
-        self.login_container = ttk.Frame(self, padding=18)
+        self.login_container = ttk.Frame(self, padding=26)
         self.login_container.pack(fill="both", expand=True)
         self.login_container.columnconfigure(0, weight=1)
         self.login_container.rowconfigure(0, weight=1)
 
-        card = ttk.Frame(self.login_container, style="Panel.TFrame", padding=28)
+        card = ttk.Frame(self.login_container, style="Panel.TFrame", padding=34)
         card.grid(row=0, column=0)
         card.columnconfigure(0, weight=1)
 
-        ttk.Label(card, text="Construction Management", style="LoginTitle.TLabel").grid(row=0, column=0, sticky="w")
-        ttk.Label(card, text="Sign in to continue", style="Muted.Panel.TLabel").grid(row=1, column=0, sticky="w", pady=(6, 22))
+        self._build_logo(card, subsample=2).grid(row=0, column=0, pady=(0, 20))
+        ttk.Label(card, text="Construction Management System", style="LoginTitle.TLabel").grid(row=1, column=0)
+        ttk.Label(
+            card,
+            text="Sign in to manage projects, payroll, materials, and services.",
+            style="LoginSubtitle.TLabel",
+            wraplength=360,
+            justify="center",
+        ).grid(
+            row=2, column=0, pady=(6, 24)
+        )
 
-        ttk.Label(card, text="User", style="Panel.TLabel").grid(row=2, column=0, sticky="w")
+        ttk.Label(card, text="User", style="Panel.TLabel").grid(row=3, column=0, sticky="w")
         user_entry = ttk.Entry(card, textvariable=self.login_user_var, width=34)
-        user_entry.grid(row=3, column=0, sticky="ew", pady=(4, 12))
+        user_entry.grid(row=4, column=0, sticky="ew", pady=(4, 12))
 
-        ttk.Label(card, text="Password", style="Panel.TLabel").grid(row=4, column=0, sticky="w")
+        ttk.Label(card, text="Password", style="Panel.TLabel").grid(row=5, column=0, sticky="w")
         password_entry = ttk.Entry(card, textvariable=self.login_password_var, show="*", width=34)
-        password_entry.grid(row=5, column=0, sticky="ew", pady=(4, 14))
+        password_entry.grid(row=6, column=0, sticky="ew", pady=(4, 14))
 
-        ttk.Button(card, text="Login", style="Accent.TButton", command=self._attempt_login).grid(row=6, column=0, sticky="ew")
-        ttk.Label(card, textvariable=self.login_status_var, style="Muted.Panel.TLabel").grid(row=7, column=0, sticky="w", pady=(12, 0))
+        ttk.Button(card, text="Login", style="Accent.TButton", command=self._attempt_login).grid(row=7, column=0, sticky="ew")
+        ttk.Label(card, textvariable=self.login_status_var, style="Muted.Panel.TLabel").grid(row=8, column=0, sticky="w", pady=(12, 0))
 
         self.bind("<Return>", lambda _event: self._attempt_login())
         user_entry.focus_set()
@@ -321,38 +374,42 @@ class ConstructionManagerApp(tk.Tk):
         self.login_status_var.set("Invalid user or password.")
 
     def _build_layout(self) -> None:
-        root = ttk.Frame(self, padding=18)
+        root = ttk.Frame(self, padding=20)
         root.pack(fill="both", expand=True)
         root.columnconfigure(1, weight=1)
         root.rowconfigure(1, weight=1)
 
         header = ttk.Frame(root)
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
-        header.columnconfigure(0, weight=1)
-        ttk.Label(header, text="Construction Management", style="Title.TLabel").grid(row=0, column=0, sticky="w")
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 16))
+        header.columnconfigure(1, weight=1)
+        self._build_logo(header, subsample=5, background=COLOR_BG).grid(row=0, column=0, rowspan=2, sticky="w", padx=(0, 14))
+        ttk.Label(header, text="Duo Builders", style="Title.TLabel").grid(row=0, column=1, sticky="sw")
+        ttk.Label(header, text="Construction Management System", style="Subtitle.TLabel").grid(row=1, column=1, sticky="nw")
 
-        sidebar = ttk.Frame(root, style="Sidebar.TFrame", padding=14)
-        sidebar.grid(row=1, column=0, sticky="nsw", padx=(0, 14))
-        sidebar.rowconfigure(2, weight=1)
+        sidebar = ttk.Frame(root, style="Sidebar.TFrame", padding=16)
+        sidebar.grid(row=1, column=0, sticky="nsw", padx=(0, 16))
+        sidebar.rowconfigure(3, weight=1)
         ttk.Label(sidebar, text="Modules", style="Sidebar.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 12))
+        ttk.Label(sidebar, text="Choose a workspace area", style="SidebarMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(0, 12))
 
         self.section_list = tk.Listbox(
             sidebar,
-            width=26,
+            width=28,
             height=12,
             activestyle="none",
-            bg="#24312f",
-            fg="#f6f2e8",
-            selectbackground="#d4a843",
-            selectforeground="#17201f",
+            bg=COLOR_PURPLE_DARK,
+            fg="#ffffff",
+            selectbackground=COLOR_CYAN,
+            selectforeground=COLOR_TEXT,
             highlightthickness=0,
             borderwidth=0,
             font=("Segoe UI", 10),
+            relief="flat",
         )
         for section in SECTIONS:
             self.section_list.insert("end", section)
         self.section_list.selection_set(0)
-        self.section_list.grid(row=1, column=0, sticky="ew")
+        self.section_list.grid(row=2, column=0, sticky="new", pady=(8, 0))
         self.section_list.bind("<<ListboxSelect>>", self._on_section_selected)
 
         main = ttk.Frame(root)
@@ -364,14 +421,14 @@ class ConstructionManagerApp(tk.Tk):
         self._build_results_panel(main)
 
         self.status_var = tk.StringVar(value="Ready")
-        ttk.Label(main, textvariable=self.status_var, foreground="#59635f").grid(row=2, column=0, sticky="ew", pady=(10, 0))
+        ttk.Label(main, textvariable=self.status_var, foreground=COLOR_MUTED).grid(row=2, column=0, sticky="ew", pady=(10, 0))
 
     def _build_query_panel(self, parent: ttk.Frame) -> None:
-        panel = ttk.Frame(parent, style="Panel.TFrame", padding=14)
-        panel.grid(row=0, column=0, sticky="ew", pady=(0, 12))
+        panel = ttk.Frame(parent, style="Panel.TFrame", padding=18)
+        panel.grid(row=0, column=0, sticky="ew", pady=(0, 14))
         panel.columnconfigure(1, weight=1)
 
-        ttk.Label(panel, text="Query", style="Panel.TLabel", font=("Segoe UI Semibold", 12)).grid(row=0, column=0, sticky="w")
+        ttk.Label(panel, text="Query", style="Panel.TLabel", font=("Segoe UI Semibold", 13)).grid(row=0, column=0, sticky="w")
         self.operation_var = tk.StringVar()
         self.operation_combo = ttk.Combobox(panel, textvariable=self.operation_var, state="readonly")
         self.operation_combo.grid(row=0, column=1, sticky="ew", padx=(12, 0))
@@ -392,7 +449,7 @@ class ConstructionManagerApp(tk.Tk):
         ttk.Button(actions, text="Clear Fields", command=self._clear_fields).pack(side="left", padx=(8, 0))
 
     def _build_results_panel(self, parent: ttk.Frame) -> None:
-        panel = ttk.Frame(parent, style="Panel.TFrame", padding=14)
+        panel = ttk.Frame(parent, style="Panel.TFrame", padding=18)
         panel.grid(row=1, column=0, sticky="nsew")
         panel.columnconfigure(0, weight=1)
         panel.rowconfigure(1, weight=1)
@@ -400,7 +457,7 @@ class ConstructionManagerApp(tk.Tk):
         top = ttk.Frame(panel, style="Panel.TFrame")
         top.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         top.columnconfigure(0, weight=1)
-        ttk.Label(top, text="Results", style="Panel.TLabel", font=("Segoe UI Semibold", 12)).grid(row=0, column=0, sticky="w")
+        ttk.Label(top, text="Results", style="Panel.TLabel", font=("Segoe UI Semibold", 13)).grid(row=0, column=0, sticky="w")
         ttk.Button(top, text="Copy", command=self._copy_results).grid(row=0, column=1, sticky="e")
         ttk.Button(top, text="Clear", command=lambda: self._set_results("")).grid(row=0, column=2, sticky="e", padx=(8, 0))
 
@@ -412,9 +469,9 @@ class ConstructionManagerApp(tk.Tk):
         self.results_text = tk.Text(
             text_frame,
             wrap="word",
-            bg="#fbfbf8",
-            fg="#1d2524",
-            insertbackground="#1d2524",
+            bg="#fbfcff",
+            fg=COLOR_TEXT,
+            insertbackground=COLOR_TEXT,
             relief="flat",
             padx=12,
             pady=12,
@@ -449,11 +506,6 @@ class ConstructionManagerApp(tk.Tk):
         self.field_vars = {}
 
         if not self.current_operation.fields:
-            ttk.Label(
-                self.form_frame,
-                text="This query does not need extra input.",
-                style="Muted.Panel.TLabel",
-            ).grid(row=0, column=0, sticky="w")
             self._load_payment_employee_list_if_needed()
             return
 
