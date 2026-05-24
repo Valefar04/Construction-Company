@@ -11,6 +11,32 @@ SERVICE_NAME = "XEPDB1"
 failVariable = "No variable found in the DB"
 
 dsn = f"{HOST}:{PORT}/{SERVICE_NAME}"
+
+def ListEmployeesForPayment():
+
+    connection = oracledb.connect( user=USER, password=PASSWORD, dsn=dsn )
+    cursor = connection.cursor()
+
+    query = """
+        select employee_id, firstname || ' ' || lastname
+        from employees
+        order by employee_id
+    """
+
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    if result:
+        aux = ["Employees available for payment:"]
+        for employee_id, name in result:
+            aux.append(f"{employee_id} | {name}")
+
+        return "\n".join(aux)
+    else:
+        return failVariable
+
 def ConsultEmployeesUnderManagers():
 
     # This is temp, must be deleted when we have the main conection

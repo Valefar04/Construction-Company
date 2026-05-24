@@ -37,6 +37,7 @@ The Payroll Payment module uses:
 
 - `Year` and `Week number` as general payroll-period inputs.
 - `Employee ID` to pay one selected employee.
+- An automatic employee ID/name list from `Employees.py` when opening `Register Employee Payment`.
 - `Employees.CurrentPay / 4` as the weekly payment amount.
 - The employee's latest historical `EmployeePayment.Tax` value as the tax deduction.
 - `TRUNC(SYSDATE)` as the payment date for new payments.

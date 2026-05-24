@@ -14,6 +14,7 @@ APP_DIR = Path(__file__).resolve().parent
 SCRIPT_DIR = APP_DIR / "scripts"
 APP_USERNAME = "ConstructionCompany"
 APP_PASSWORD = "const123"
+PAYROLL_PAYMENT_REGISTER_TITLE = "Register Employee Payment"
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,14 @@ class Operation:
     module: str
     function: str
     fields: tuple[Field, ...] = ()
+
+
+PAYROLL_PAYMENT_EMPLOYEE_LIST = Operation(
+    "Employees Available For Payment",
+    "List employee IDs and names for payroll payment.",
+    "Employees.py",
+    "ListEmployeesForPayment",
+)
 
 
 SECTIONS: dict[str, tuple[Operation, ...]] = {
@@ -155,7 +164,7 @@ SECTIONS: dict[str, tuple[Operation, ...]] = {
             ),
         ),
         Operation(
-            "Register Employee Payment",
+            PAYROLL_PAYMENT_REGISTER_TITLE,
             "Pay one employee for a week using CurrentPay and the employee's last tax value.",
             "EmployeePayment.py",
             "PayEmployee",
@@ -445,6 +454,7 @@ class ConstructionManagerApp(tk.Tk):
                 text="This query does not need extra input.",
                 style="Muted.Panel.TLabel",
             ).grid(row=0, column=0, sticky="w")
+            self._load_payment_employee_list_if_needed()
             return
 
         for col in range(3):
@@ -460,6 +470,19 @@ class ConstructionManagerApp(tk.Tk):
             variable = tk.StringVar()
             ttk.Entry(cell, textvariable=variable).grid(row=1, column=0, sticky="ew", pady=(4, 0))
             self.field_vars[field.key] = variable
+
+        self._load_payment_employee_list_if_needed()
+
+    def _load_payment_employee_list_if_needed(self) -> None:
+        if self.current_operation.title != PAYROLL_PAYMENT_REGISTER_TITLE:
+            return
+
+        self.status_var.set("Loading employee list...")
+        self._set_results("Loading employee list...")
+
+        thread = threading.Thread(target=self._execute_operation, args=(PAYROLL_PAYMENT_EMPLOYEE_LIST, []), daemon=True)
+        thread.start()
+        self.after(100, self._poll_output_queue)
 
     def _clear_fields(self) -> None:
         for variable in self.field_vars.values():
