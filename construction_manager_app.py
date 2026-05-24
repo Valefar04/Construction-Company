@@ -10,7 +10,8 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 
 
-SCRIPT_DIR = Path(__file__).resolve().parent
+APP_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR = APP_DIR / "scripts"
 APP_USERNAME = "ConstructionCompany"
 APP_PASSWORD = "const123"
 
@@ -135,6 +136,29 @@ SECTIONS: dict[str, tuple[Operation, ...]] = {
             "Check whether an employee has a pay date for a week.",
             "EmployeePayment.py",
             "PayWeek",
+            (
+                Field("year", "Year", "int"),
+                Field("week_number", "Week number", "int"),
+                Field("employee_id", "Employee ID"),
+            ),
+        ),
+    ),
+    "Payroll Payment": (
+        Operation(
+            "Employees To Pay",
+            "List every employee with current pay, calculated payment, tax, and pay status for a week.",
+            "EmployeePayment.py",
+            "ListEmployeesToPay",
+            (
+                Field("year", "Year", "int"),
+                Field("week_number", "Week number", "int"),
+            ),
+        ),
+        Operation(
+            "Register Employee Payment",
+            "Pay one employee for a week using CurrentPay and the employee's last tax value.",
+            "EmployeePayment.py",
+            "PayEmployee",
             (
                 Field("year", "Year", "int"),
                 Field("week_number", "Week number", "int"),

@@ -16,12 +16,6 @@ if %errorlevel% equ 0 (
     exit /b %errorlevel%
 )
 
-set "CODEX_PY=C:\Users\Ivan\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
-if exist "%CODEX_PY%" (
-    "%CODEX_PY%" "%APP_FILE%"
-    exit /b %errorlevel%
-)
-
 echo Python was not found. Install Python 3, then run:
 echo   pip install oracledb
 echo   python "%APP_FILE%"
