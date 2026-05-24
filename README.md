@@ -26,6 +26,7 @@ Password: const123
 ## What It Does
 
 - Groups the project queries by area: construction sites, customers, employees, payments, machines, materials, warehouses, and external services.
+- Shows an automatic ID/name reference list when opening each module so users can find records more easily.
 - Adds a Payroll Payment module to list employees by week/year and register employee payments by Employee ID.
 - Provides forms for the parameters each query needs.
 - Uses the database connection already defined in the backend Python scripts.
@@ -37,7 +38,7 @@ The Payroll Payment module uses:
 
 - `Year` and `Week number` as general payroll-period inputs.
 - `Employee ID` to pay one selected employee.
-- An automatic employee ID/name list from `Employees.py` when opening `Register Employee Payment`.
+- An automatic employee ID/name list when opening the module.
 - `Employees.CurrentPay / 4` as the weekly payment amount.
 - The employee's latest historical `EmployeePayment.Tax` value as the tax deduction.
 - `TRUNC(SYSDATE)` as the payment date for new payments.
@@ -52,7 +53,13 @@ This employee has already been paid.
 
 The app does not change your partner's scripts. It imports them from the `scripts` folder, calls the selected function, and displays the returned text.
 
-The app login now matches the Oracle credentials in the backend scripts. If Oracle shows `ORA-01017: invalid username/password; logon denied`, Oracle is rejecting those credentials at the database level. The scripts currently use:
+The app login matches the Oracle credentials in the backend scripts. If Oracle cannot connect, the app shows:
+
+```text
+Connection failed.
+```
+
+The scripts currently use:
 
 ```text
 User: ConstructionCompany
@@ -76,6 +83,7 @@ scripts/
   Machines.py
   MachinesInConstruction.py
   Material.py
+  ReferenceData.py
   ServiceExternalCompany.py
   ServiceInConstruction.py
   Stock.py

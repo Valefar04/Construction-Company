@@ -14,7 +14,6 @@ APP_DIR = Path(__file__).resolve().parent
 SCRIPT_DIR = APP_DIR / "scripts"
 APP_USERNAME = "ConstructionCompany"
 APP_PASSWORD = "const123"
-PAYROLL_PAYMENT_REGISTER_TITLE = "Register Employee Payment"
 LOGO_PATH = APP_DIR / "assets" / "duo_builders_logo.png"
 COLOR_BG = "#f4f6fb"
 COLOR_PANEL = "#ffffff"
@@ -40,14 +39,6 @@ class Operation:
     module: str
     function: str
     fields: tuple[Field, ...] = ()
-
-
-PAYROLL_PAYMENT_EMPLOYEE_LIST = Operation(
-    "Employees Available For Payment",
-    "List employee IDs and names for payroll payment.",
-    "Employees.py",
-    "ListEmployeesForPayment",
-)
 
 
 SECTIONS: dict[str, tuple[Operation, ...]] = {
@@ -87,13 +78,6 @@ SECTIONS: dict[str, tuple[Operation, ...]] = {
             "Find phone, email, and customer type by customer ID.",
             "Customers.py",
             "CustomerInfo",
-            (Field("customer_id", "Customer ID"),),
-        ),
-        Operation(
-            "Customer Type",
-            "Find a customer's type by customer ID.",
-            "Customers.py",
-            "SearchCustomerTypeByID",
             (Field("customer_id", "Customer ID"),),
         ),
     ),
@@ -173,7 +157,7 @@ SECTIONS: dict[str, tuple[Operation, ...]] = {
             ),
         ),
         Operation(
-            PAYROLL_PAYMENT_REGISTER_TITLE,
+            "Register Employee Payment",
             "Pay one employee for a week using CurrentPay and the employee's last tax value.",
             "EmployeePayment.py",
             "PayEmployee",
@@ -249,6 +233,58 @@ SECTIONS: dict[str, tuple[Operation, ...]] = {
 }
 
 
+SECTION_REFERENCE_OPERATIONS: dict[str, Operation] = {
+    "Construction Sites": Operation(
+        "Construction Site References",
+        "List construction site IDs and names.",
+        "ReferenceData.py",
+        "ListConstructionSiteReferences",
+    ),
+    "Customers": Operation(
+        "Customer References",
+        "List customer IDs and names.",
+        "ReferenceData.py",
+        "ListCustomerReferences",
+    ),
+    "Employees": Operation(
+        "Employee References",
+        "List employee IDs and names.",
+        "ReferenceData.py",
+        "ListEmployeeReferences",
+    ),
+    "Payments": Operation(
+        "Payment References",
+        "List payment IDs and employee names.",
+        "ReferenceData.py",
+        "ListPaymentReferences",
+    ),
+    "Payroll Payment": Operation(
+        "Payroll Employee References",
+        "List employee IDs and names for payroll.",
+        "ReferenceData.py",
+        "ListPayrollPaymentReferences",
+    ),
+    "Machines": Operation(
+        "Machine References",
+        "List machine IDs and names.",
+        "ReferenceData.py",
+        "ListMachineReferences",
+    ),
+    "Materials & Warehouses": Operation(
+        "Material And Warehouse References",
+        "List material and warehouse IDs and names.",
+        "ReferenceData.py",
+        "ListMaterialWarehouseReferences",
+    ),
+    "External Services": Operation(
+        "External Service References",
+        "List external service IDs and names.",
+        "ReferenceData.py",
+        "ListExternalServiceReferences",
+    ),
+}
+
+
 class ConstructionManagerApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
@@ -257,7 +293,10 @@ class ConstructionManagerApp(tk.Tk):
         self.minsize(920, 600)
 
         self.modules: dict[str, object] = {}
-        self.output_queue: queue.Queue[tuple[bool, str]] = queue.Queue()
+        self.output_queue: queue.Queue[tuple[bool, str, str | None, bool]] = queue.Queue()
+        self.reference_cache: dict[str, str] = {}
+        self.loading_reference_sections: set[str] = set()
+        self.current_section = "Construction Sites"
         self.current_operation = SECTIONS["Construction Sites"][0]
         self.field_vars: dict[str, tk.StringVar] = {}
         self.operation_lookup: dict[str, Operation] = {}
@@ -491,6 +530,7 @@ class ConstructionManagerApp(tk.Tk):
         self._show_operation(self.operation_combo["values"][0])
 
     def _populate_operations(self, section: str) -> None:
+        self.current_section = section
         operations = SECTIONS[section]
         self.operation_lookup = {operation.title: operation for operation in operations}
         self.operation_combo["values"] = tuple(self.operation_lookup)
@@ -506,7 +546,7 @@ class ConstructionManagerApp(tk.Tk):
         self.field_vars = {}
 
         if not self.current_operation.fields:
-            self._load_payment_employee_list_if_needed()
+            self._load_section_reference()
             return
 
         for col in range(3):
@@ -523,16 +563,30 @@ class ConstructionManagerApp(tk.Tk):
             ttk.Entry(cell, textvariable=variable).grid(row=1, column=0, sticky="ew", pady=(4, 0))
             self.field_vars[field.key] = variable
 
-        self._load_payment_employee_list_if_needed()
+        self._load_section_reference()
 
-    def _load_payment_employee_list_if_needed(self) -> None:
-        if self.current_operation.title != PAYROLL_PAYMENT_REGISTER_TITLE:
+    def _load_section_reference(self) -> None:
+        reference_operation = SECTION_REFERENCE_OPERATIONS.get(self.current_section)
+        if reference_operation is None:
             return
 
-        self.status_var.set("Loading employee list...")
-        self._set_results("Loading employee list...")
+        if self.current_section in self.reference_cache:
+            self._set_results(self.reference_cache[self.current_section])
+            self.status_var.set("Done")
+            return
 
-        thread = threading.Thread(target=self._execute_operation, args=(PAYROLL_PAYMENT_EMPLOYEE_LIST, []), daemon=True)
+        if self.current_section in self.loading_reference_sections:
+            return
+
+        self.loading_reference_sections.add(self.current_section)
+        self.status_var.set("Loading reference list...")
+        self._set_results("Loading reference list...")
+
+        thread = threading.Thread(
+            target=self._execute_reference_operation,
+            args=(self.current_section, reference_operation),
+            daemon=True,
+        )
         thread.start()
         self.after(100, self._poll_output_queue)
 
@@ -575,33 +629,27 @@ class ConstructionManagerApp(tk.Tk):
             module = self._load_module(operation.module)
             function = getattr(module, operation.function)
             result = function(*args)
-            self.output_queue.put((True, str(result)))
+            self.output_queue.put((True, str(result), None, False))
         except Exception as exc:
             message = self._format_query_error(exc)
-            self.output_queue.put((False, message))
+            self.output_queue.put((False, message, None, False))
+
+    def _execute_reference_operation(self, section: str, operation: Operation) -> None:
+        try:
+            module = self._load_module(operation.module)
+            function = getattr(module, operation.function)
+            result = function()
+            self.output_queue.put((True, str(result), section, True))
+        except Exception as exc:
+            message = self._format_query_error(exc)
+            self.output_queue.put((False, message, section, True))
 
     def _format_query_error(self, exc: Exception) -> str:
         error_text = str(exc)
-        if "ORA-01017" in error_text:
-            return (
-                f"{type(exc).__name__}: {error_text}\n\n"
-                "Oracle rejected the database username or password from the backend scripts.\n"
-                "The desktop app login uses the same credentials shown below, so if the app login worked "
-                "but Oracle still rejects the query, the database user may not exist, may be locked, "
-                "or may have a different password inside Oracle.\n\n"
-                "Current backend Oracle credentials found in the scripts:\n"
-                "User: ConstructionCompany\n"
-                "Password: const123\n"
-                "DSN: localhost:1521/XEPDB1\n\n"
-                "Fix this by creating/unlocking that Oracle user with the same password, "
-                "or by changing USER and PASSWORD in the backend scripts to match your real Oracle schema."
-            )
+        if any(token in error_text for token in ("ORA-", "DPY-", "DPI-", "TNS:")):
+            return "Connection failed."
 
-        return (
-            f"{type(exc).__name__}: {error_text}\n\n"
-            "Check that Oracle Database is running, the oracledb package is installed, "
-            "and the backend script connection constants match your local database."
-        )
+        return "Query failed."
 
     def _load_module(self, filename: str) -> object:
         if filename in self.modules:
@@ -623,10 +671,17 @@ class ConstructionManagerApp(tk.Tk):
 
     def _poll_output_queue(self) -> None:
         try:
-            success, output = self.output_queue.get_nowait()
+            success, output, section, is_reference = self.output_queue.get_nowait()
         except queue.Empty:
             self.after(100, self._poll_output_queue)
             return
+
+        if is_reference and section is not None:
+            self.loading_reference_sections.discard(section)
+            if success:
+                self.reference_cache[section] = output
+            if section != self.current_section:
+                return
 
         self._set_results(output)
         self.run_button.configure(state="normal")
