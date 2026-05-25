@@ -23,52 +23,6 @@ User: ConstructionCompany
 Password: const123
 ```
 
-## What It Does
-
-- Groups the project queries by area: construction sites, customers, employees, payments, machines, materials, warehouses, and external services.
-- Shows an automatic ID/name reference list when opening each module so users can find records more easily.
-- Adds a Payroll Payment module to list employees by week/year and register employee payments by Employee ID.
-- Provides forms for the parameters each query needs.
-- Uses the database connection already defined in the backend Python scripts.
-- Runs each query in the background so the window does not freeze while Oracle responds.
-
-## Payroll Payment
-
-The Payroll Payment module uses:
-
-- `Year` and `Week number` as general payroll-period inputs.
-- `Employee ID` to pay one selected employee.
-- An automatic employee ID/name list when opening the module.
-- `Employees.CurrentPay / 4` as the weekly payment amount.
-- The employee's latest historical `EmployeePayment.Tax` value as the tax deduction.
-- `TRUNC(SYSDATE)` as the payment date for new payments.
-
-If a payment already exists for the same `Year`, `WeekNumber`, and `Employee_ID`, the app shows:
-
-```text
-This employee has already been paid.
-```
-
-## Notes
-
-The app does not change your partner's scripts. It imports them from the `scripts` folder, calls the selected function, and displays the returned text.
-
-The app login matches the Oracle credentials in the backend scripts. If Oracle cannot connect, the app shows:
-
-```text
-Connection failed.
-```
-
-The scripts currently use:
-
-```text
-User: ConstructionCompany
-Password: const123
-DSN: localhost:1521/XEPDB1
-```
-
-Create/unlock that Oracle user with the same password, or change the backend script constants to match the database user you created.
-
 The folder should contain:
 
 ```text
