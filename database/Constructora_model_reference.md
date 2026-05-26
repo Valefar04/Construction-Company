@@ -1,8 +1,6 @@
 # Constructora - modelo esperado
 
-Referencia del modelo final visto en ERwin. Usar este archivo para comparar el script SQL generado.
-
-## Reglas de negocio asumidas
+## Reglas de negocio
 
 - Un cliente puede tener varias construcciones.
 - Una construccion pertenece a un solo cliente.
@@ -69,7 +67,7 @@ Llave esperada: PK compuesta por `Employee_ID`, `WeekNumber`, `Year`.
 - `InitialLicenseDate`
 - `EndLicenseDate`
 
-Llave esperada: probablemente compuesta por `Employee_ID` y `Machine_ID`, salvo que ERwin genere otra llave.
+Llave esperada: probablemente compuesta por `Employee_ID` y `Machine_ID`.
 
 ### Machines
 
@@ -104,8 +102,6 @@ Llave esperada: PK compuesta por `ConstructionSite_ID` y `Machine_ID`.
 - `Name`
 - `Propose`
 
-Nota: el nombre en ingles correcto probablemente seria `Purpose`, pero en el modelo final aparece como `Propose`.
-
 ### Stock
 
 - `WareHouse_ID` FK a `WareHouse.WareHouse_ID`
@@ -131,19 +127,3 @@ Llave esperada: PK compuesta por `WareHouse_ID` y `Material_ID`.
 - `EndDateService`
 
 Llave esperada: PK compuesta por `ConstructionSite_ID` y `Company_ID`.
-
-## Puntos a verificar en el script SQL
-
-- Que existan las 12 tablas anteriores.
-- Que `ConstructionSite.Customer_ID` sea FK hacia `Customers`.
-- Que no exista `Customers.ConstructionSite_ID`.
-- Que `EmployeePayment` conserve `Employee_ID`, `WeekNumber`, `Year`, `PaymentAmount`, `Tax` y `PayDate`.
-- Que `EmployeePayment` tenga PK compuesta por `Employee_ID`, `WeekNumber`, `Year`.
-- Que las tablas puente tengan llaves compuestas:
-  - `Stock`: `WareHouse_ID`, `Material_ID`
-  - `MachinesInConstruction`: `ConstructionSite_ID`, `Machine_ID`
-  - `ServiceInConstruction`: `ConstructionSite_ID`, `Company_ID`
-  - `Licenses`: `Employee_ID`, `Machine_ID`
-- Que `ServiceExternalCompany` use `Company_ID` y no `Contract_ID`.
-- Que `ServiceInConstruction` contenga las fechas y descripcion del servicio, no la compania externa.
-- Que las FKs apunten a las tablas correctas y se creen despues de las PKs.
